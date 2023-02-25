@@ -2,6 +2,8 @@
 
 A simple memoization tool.
 
+![unit tests workflow](https://github.com/adigitalmonk/souvenir/actions/workflows/tests.yml/badge.svg)
+
 ## Installation
 
 ```toml
