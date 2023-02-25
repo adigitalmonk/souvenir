@@ -8,6 +8,10 @@
 //! [Recall]: crate::recall::Recall
 
 #![deny(clippy::pedantic)]
+#![deny(clippy::correctness)]
+#![deny(clippy::nursery)]
+#![deny(clippy::suspicious)]
+#![deny(clippy::complexity)]
 #![warn(clippy::style)]
 
 mod memory;

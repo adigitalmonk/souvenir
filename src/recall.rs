@@ -21,7 +21,7 @@ where
     /// let mut doubled_once = Recall::new(|| key * 2);
     /// assert_eq!(doubled_once.value(), 4);
     /// ```
-    pub fn new(evaluator: T) -> Self {
+    pub const fn new(evaluator: T) -> Self {
         Self {
             evaluator,
             value: None,

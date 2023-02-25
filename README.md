@@ -23,9 +23,9 @@ use souvenir::Recall;
 
 fn main() {
     let mut doubler = Memory::new(|key: &u32| key * 2);
-    debug_assert_eq!(doubler.resolve(2), 4);
-    debug_assert_eq!(doubler.resolve(2), 4); // Didn't recalculate
-    debug_assert_eq!(doubler.resolve(4), 8);
+    debug_assert_eq!(doubler.resolve(&2), 4);
+    debug_assert_eq!(doubler.resolve(&2), 4); // Didn't recalculate
+    debug_assert_eq!(doubler.resolve(&4), 8);
 
     let base_value = 2;
     let mut recaller = Recall::new(|| base_value * 2);

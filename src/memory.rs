@@ -10,8 +10,6 @@ pub struct Memory<T, TIn, TOut> {
 impl<T, TIn, TOut> Memory<T, TIn, TOut>
 where
     T: FnMut(&TIn) -> TOut,
-    TOut: Clone,
-    TIn: Eq + Hash,
 {
     /// Create a new Memory, providing a function for handling a cache miss
     ///
@@ -50,18 +48,22 @@ where
     /// ```
     /// use souvenir::Memory;
     /// let mut doubler = Memory::new(|x| x * 2);
-    /// assert_eq!(doubler.resolve(2), 4);
+    /// assert_eq!(doubler.resolve(&2), 4);
     ///
     /// let mut doubler = Memory::new(|key: &String| key.to_owned() + "test");
     /// let test_input = String::from("test");
-    /// assert_eq!(doubler.resolve(test_input), "testtest");
+    /// assert_eq!(doubler.resolve(&test_input), "testtest");
     /// ```
-    pub fn resolve(&mut self, input: TIn) -> TOut {
-        if let Some(value) = self.values.get(&input) {
+    pub fn resolve(&mut self, input: &TIn) -> TOut
+    where
+        TIn: Clone + Eq + Hash,
+        TOut: Clone,
+    {
+        if let Some(value) = self.values.get(input) {
             value.clone()
         } else {
-            let result = (self.remember)(&input);
-            self.values.insert(input, result.clone());
+            let result = (self.remember)(input);
+            self.values.insert(input.clone(), result.clone());
             result
         }
     }
@@ -74,14 +76,14 @@ mod tests {
     #[test]
     fn it_works_with_primatives() {
         let mut doubler = Memory::new(|key: &u32| key * 2);
-        assert_eq!(doubler.resolve(2), 4);
+        assert_eq!(doubler.resolve(&2), 4);
     }
 
     #[test]
     fn it_works_with_strings() {
         let mut doubler = Memory::new(|key: &String| key.to_string() + "test");
         let test_input = String::from("test");
-        assert_eq!(doubler.resolve(test_input), "testtest");
+        assert_eq!(doubler.resolve(&test_input), "testtest");
     }
 
     #[test]
@@ -93,31 +95,38 @@ mod tests {
         };
 
         let mut doubler = Memory::new(tool);
-        assert_eq!(doubler.resolve(2), 4); // counter == 1
-        assert_eq!(doubler.resolve(2), 4); // counter == 1
-        assert_eq!(doubler.resolve(3), 6); // counter == 2
+        assert_eq!(doubler.resolve(&2), 4); // counter == 1
+        assert_eq!(doubler.resolve(&2), 4); // counter == 1
+        assert_eq!(doubler.resolve(&3), 6); // counter == 2
         assert_eq!(counter, 2);
     }
 
     #[test]
     fn it_works_with_structs() {
-        #[derive(Hash, PartialEq, Clone)]
+        #[derive(Hash, PartialEq, Eq, Clone)]
         struct User {
-            id: u32,
+            scores: Vec<u32>,
+        }
+        impl User {
+            fn total_score(&self) -> u32 {
+                self.scores.iter().sum()
+            }
         }
 
         let mut trigger = 0;
-        let tool = |user_idx: &u32| -> User {
+        let tool = |user: &User| -> u32 {
             trigger += 1;
-            User { id: *user_idx }
+            user.total_score()
+        };
+        let test_user = User {
+            scores: Vec::from([1, 2, 3]),
         };
 
         let mut memory = Memory::new(tool);
-        let user1 = memory.resolve(1);
-        let user2 = memory.resolve(1);
-        let user3 = memory.resolve(1);
-        assert_eq!(user1.id, user2.id);
-        assert_eq!(user1.id, user3.id);
+        let user1_score = memory.resolve(&test_user);
+        let user2_score = memory.resolve(&test_user);
+        assert_eq!(user1_score, 6);
+        assert_eq!(user1_score, user2_score);
         assert_eq!(trigger, 1);
     }
 }
